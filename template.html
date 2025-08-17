@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Template Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            padding: 20px;
+        }
+        .input-container {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        input, select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            width: 200px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: #1e90ff;
+            outline: none;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .add-btn {
+            background: tensile;
+            color: white;
+        }
+        .add-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .generate-btn {
+            background: #1e90ff;
+            color: white;
+        }
+        .generate-btn:hover {
+            background: #007bff;
+            transform: translateY(-2px);
+        }
+        .toggle-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        .toggle-container label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #1e3c72;
+            color: white;
+            font-weight: 600;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .remove-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        .won {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .lost {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        #total-odds {
+            font-weight: 600;
+            font-size: 18px;
+            color: #1e3c72;
+            text-align: center;
+            margin: 15px 0;
+        }
+        #output {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        #output table {
+            margin: 0 auto;
+        }
+        .card {
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(to right, #1e90ff, #28a745);
+        }
+        .card-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .card-content div {
+            font-size: 14px;
+        }
+        .card-content strong {
+            color: #1e3c72;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="match" placeholder="Match (e.g., Man U vs Man City)">
+            <input type="text" id="market" placeholder="Market (e.g., Over 2.5)">
+            <input type="number" id="odds" placeholder="Odds (e.g., 1.95)" step="0.01">
+            <input type="text" id="midResult" placeholder="Mid-Result (e.g., 1-0, 3 corners)">
+            <select id="result">
+                <option value="">Result</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+            </select>
+            <button class="add-btn" onclick="addMatch()">Add Match</button>
+            <div class="toggle-container">
+                <label><input type="radio" name="betType" value="parlay" checked> Parlay</label>
+                <label><input type="radio" name="betType" value="single"> Single Bets</label>
+            </div>
+            <button class="generate-btn" onclick="generateTemplate()">Generate Template</button>
+        </div>
+        <table id="matches">
+            <thead>
+                <tr>
+                    <th>Match</th>
+                    <th>Market</th>
+                    <th>Odds</th>
+                    <th>Mid-Result</th>
+                    <th>Result</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="total-odds"></div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let matches = [];
+
+        function addMatch() {
+            const match = document.getElementById('match').value;
+            const market = document.getElementById('market').value;
+            const odds = parseFloat(document.getElementById('odds').value);
+            const midResult = document.getElementById('midResult').value;
+            const result = document.getElementById('result').value;
+
+            if (match && market && !isNaN(odds)) {
+                matches.push({ match, market, odds, midResult, result });
+                renderMatches();
+                document.getElementById('match').value = '';
+                document.getElementById('market').value = '';
+                document.getElementById('odds').value = '';
+                document.getElementById('midResult').value = '';
+                document.getElementById('result').value = '';
+            }
+        }
+
+        function removeMatch(index) {
+            matches.splice(index, 1);
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const tbody = document.getElementById('matches').getElementsByTagName('tbody')[0];
+            tbody.innerHTML = '';
+            let totalOdds = 1;
+            matches.forEach((m, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${m.match}</td>
+                    <td>${m.market}</td>
+                    <td>${m.odds.toFixed(2)}</td>
+                    <td>${m.midResult || '-'}</td>
+                    <td class="${m.result}">${m.result ? (m.result === 'won' ? 'Won' : 'Lost') : '-'}</td>
+                    <td><button class="remove-btn" onclick="removeMatch(${index})">Remove</button></td>
+                `;
+                totalOdds *= m.odds;
+            });
+            const betType = document.querySelector('input[name="betType"]:checked').value;
+            if (betType === 'parlay' && matches.length > 0) {
+                const allWon = matches.every(m => m.result === 'won');
+                const anyLost = matches.some(m => m.result === 'lost');
+                const parlayResult = allWon ? 'Won' : anyLost ? 'Lost' : '';
+                document.getElementById('total-odds').innerHTML = `Parlay Total Odds: ${totalOdds.toFixed(2)} ${parlayResult ? `<span class="${parlayResult.toLowerCase()}">(${parlayResult})</span>` : ''}`;
+            } else {
+                document.getElementById('total-odds').innerText = matches.length > 0 ? 'Single Bets' : '';
+            }
+        }
+
+        function generateTemplate() {
+            const betType = document.querySelector('input[name="betType"]:checked').value;
+            let html = '';
+            if (betType === 'parlay') {
+                html += '<table style="width:100%;border-collapse:collapse;background:#fff;font-family:\'Segoe UI\',Arial,sans-serif;">';
+                html += '<thead><tr style="background:#1e3c72;color:white;"><th style="padding:12px;">Match</th><th style="padding:12px;">Market</th><th style="padding:12px;">Odds</th>';
+                if (matches.some(m => m.midResult)) html += '<th style="padding:12px;">Mid-Result</th>';
+                if (matches.some(m => m.result)) html += '<th style="padding:12px;">Result</th>';
+                html += '</tr></thead><tbody>';
+                matches.forEach(m => {
+                    html += `<tr style="border-bottom:1px solid #e0e0e0;"><td style="padding:12px;">${m.match}</td><td style="padding:12px;">${m.market}</td><td style="padding:12px;">${m.odds.toFixed(2)}</td>`;
+                    if (matches.some(m => m.midResult)) html += `<td style="padding:12px;">${m.midResult || '-'}</td>`;
+                    if (matches.some(m => m.result)) html += `<td style="padding:12px;color:${m.result === 'won' ? '#28a745' : m.result === 'lost' ? '#dc3545' : '#333'};font-weight:bold;">${m.result ? (m.result === 'won' ? 'Won' : 'Lost') : '-'}</td>`;
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                let totalOdds = matches.reduce((acc, m) => acc * m.odds, 1);
+                const allWon = matches.every(m => m.result === 'won');
+                const anyLost = matches.some(m => m.result === 'lost');
+                const parlayResult = allWon ? 'Won' : anyLost ? 'Lost' : '';
+                html += `<div style="text-align:center;font-weight:600;font-size:18px;color:#1e3c72;margin:15px 0;">Parlay Total Odds: ${totalOdds.toFixed(2)} ${parlayResult ? `<span style="color:${parlayResult === 'Won' ? '#28a745' : '#dc3545'};font-weight:bold;">(${parlayResult})</span>` : ''}</div>`;
+            } else {
+                matches.forEach(m => {
+                    html += `<div style="background:linear-gradient(145deg,#ffffff,#e6e6e6);border-radius:12px;padding:15px;margin:10px 0;box-shadow:0 6px 12px rgba(0,0,0,0.15);position:relative;overflow:hidden;width:100%;max-width:500px;margin-left:auto;margin-right:auto;">`;
+                    html += `<div style="position:absolute;top:0;left:0;width:100%;height:5px;background:linear-gradient(to right,#1e90ff,#28a745);"></div>`;
+                    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:14px;">`;
+                    html += `<div><strong style="color:#1e3c72;">Match:</strong> ${m.match}</div>`;
+                    html += `<div><strong style="color:#1e3c72;">Market:</strong> ${m.market}</div>`;
+                    html += `<div><strong style="color:#1e3c72;">Odds:</strong> ${m.odds.toFixed(2)}</div>`;
+                    if (m.midResult) html += `<div><strong style="color:#1e3c72;">Mid-Result:</strong> ${m.midResult}</div>`;
+                    if (m.result) html += `<div><strong style="color:#1e3c72;">Result:</strong> <span style="color:${m.result === 'won' ? '#28a745' : '#dc3545'};font-weight:bold;">${m.result === 'won' ? 'Won' : 'Lost'}</span></div>`;
+                    html += `</div></div>`;
+                });
+            }
+            html += '<div style="text-align:center;font-size:14px;color:#333;margin-top:10px;">#BetSmart #Winning</div>';
+            document.getElementById('output').innerHTML = html;
+            document.getElementById('output').style.display = 'block';
+        }
+
+        document.querySelectorAll('input[name="betType"]').forEach(radio => {
+            radio.addEventListener('change', renderMatches);
+        });
+    </script>
+</body>
+</html>
